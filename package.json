@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Oliviaa7/tinyapp/issues"
   },
-  "homepage": "https://github.com/Oliviaa7/tinyapp#readme"
+  "homepage": "https://github.com/Oliviaa7/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.21.1"
+  }
 }
