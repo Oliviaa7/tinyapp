@@ -9,8 +9,12 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 };
 
+app.get("/urls.json", (req, res) => {
+  res.json(urlDatabase);
+});
+
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.send("<h1>Welcome to TinyApp!</h1>");
 });
 
 app.listen(PORT, () => {
@@ -22,6 +26,10 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars)
 });
 
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]};
   res.render("urls_show", templateVars);
@@ -29,10 +37,7 @@ app.get("/urls/:id", (req, res) => {
 
 
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n")
-});
+// app.get("/hello", (req, res) => {
+//   res.send("<html><body>Hello <b>World</b></body></html>\n")
+// });
