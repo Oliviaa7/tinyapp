@@ -10,16 +10,16 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 };
 
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
 });
 
 app.get("/", (req, res) => {
   res.send("<h1>Welcome to TinyApp!</h1>");
 });
 
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+app.get("/urls.json", (req, res) => {
+  res.json(urlDatabase);
 });
 
 app.get("/urls", (req, res) => {
@@ -36,11 +36,20 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+app.get("/u/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+
+  if (longURL) {
+    res.redirect(longURL);
+  } else {
+    res.status(404).send("URL Not Found.");
+  }
+});
+
 app.post("/urls", (req, res) => {
   const id = generateRandomString();
   const longURL = req.body.longURL;
   urlDatabase[id] = longURL;
-  // console.log(req.body); // Log the POST request body to the console
   res.redirect(`/urls/${id}`); 
 });
 
@@ -53,13 +62,3 @@ const generateRandomString = function() {
   }
   return result;
 };
-
-app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
-  res.redirect(longURL);
-})
-
-
-// app.get("/hello", (req, res) => {
-//   res.send("<html><body>Hello <b>World</b></body></html>\n")
-// });
