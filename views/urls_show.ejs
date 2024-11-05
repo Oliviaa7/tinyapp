@@ -20,7 +20,7 @@
           Short URL ID: <a href="/u/<%= id %>"><%= id %></a>
         </p>
         <form method="POST" action="/urls/<%= id %>">
-          <input type="text" name="longURL" placeholder="Update URL">
+          <input type="text" name="longURL" value="<%= longURL %>" placeholder="Update URL">
           <button type="submit" style=
           "background-color: white; 
           color: black;
