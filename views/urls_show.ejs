@@ -18,20 +18,20 @@
         <h5 class="card-title"><b>TinyURL for: </b><%= longURL %></h5>
         <p class="card-text">
           Short URL ID: <a href="/u/<%= id %>"><%= id %></a>
-          <form method="POST" action="/urls/<%= id %>/update">
-            <input type="text" name="longURL" placeholder="Update URL">
-            <button type="submit" style=
-            "background-color: white; 
-            color: black;
-            border-color: black; 
-            border-radius: 3px; 
-            padding: 5px 10px; 
-            cursor: pointer;
-            ">
-            Update
-            </button>
-          </form>
         </p>
+        <form method="POST" action="/urls/<%= id %>">
+          <input type="text" name="longURL" placeholder="Update URL">
+          <button type="submit" style=
+          "background-color: white; 
+          color: black;
+          border-color: black; 
+          border-radius: 3px; 
+          padding: 5px 10px; 
+          cursor: pointer;
+          ">
+          Update
+          </button>
+        </form>
       </div>
       <div class="card-footer text-muted"></div>
     </div>
