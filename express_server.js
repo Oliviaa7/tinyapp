@@ -1,9 +1,12 @@
 const express = require("express");
+const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(express.json());
 
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
@@ -78,4 +81,13 @@ app.post("/urls/:id", (req, res) => {
 
   urlDatabase[req.params.id] = req.body.longURL;
   res.redirect("/urls");
+});
+
+app.post("/login", (req, res) => {
+  const { username } = req.body;
+  if(username){
+    res.cookie('username', username);
+    return res.redirect("/urls");
+  };
+  return res.status(404).send("Username error.");
 });
