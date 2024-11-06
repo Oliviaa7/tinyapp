@@ -106,3 +106,9 @@ app.post("/login", (req, res) => {
   };
   return res.status(400).send("Username error.");
 });
+
+// Route for logout form
+app.post("/logout", (req, res) => {
+  res.clearCookie('username');
+  return res.redirect("/urls");
+})
