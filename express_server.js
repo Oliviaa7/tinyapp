@@ -27,6 +27,7 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
+// Main page, to be reworked
 app.get("/", (req, res) => {
   res.send("<h1>Welcome to TinyApp!</h1>");
 });
@@ -35,15 +36,25 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
+// Current main page of app, displays list of URLs and shortURLs
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { 
+    urls: urlDatabase,
+    username: req.cookies["username"],
+   };
   res.render("urls_index", templateVars)
 });
 
+// Route to add a new shortURL
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = { 
+    urls: urlDatabase,
+    username: req.cookies["username"],
+  };
+  res.render("urls_new", templateVars);
 });
 
+// Route to view one particular URL
 app.get("/urls/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
     return res.status(404).send("URL Not Found.");
@@ -52,6 +63,7 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+// 
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
 
@@ -62,6 +74,7 @@ app.get("/u/:id", (req, res) => {
   }
 });
 
+// Route for "new shortURL" form 
 app.post("/urls", (req, res) => {
   const id = generateRandomString();
   const longURL = req.body.longURL;
@@ -69,6 +82,7 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`); 
 });
 
+// Route for delete form
 app.post("/urls/:id/delete", (req, res) => {
   delete urlDatabase[req.params.id];
   res.redirect("/urls");
@@ -83,11 +97,12 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/urls");
 });
 
+// Route for login form
 app.post("/login", (req, res) => {
   const { username } = req.body;
   if(username){
     res.cookie('username', username);
     return res.redirect("/urls");
   };
-  return res.status(404).send("Username error.");
+  return res.status(400).send("Username error.");
 });
