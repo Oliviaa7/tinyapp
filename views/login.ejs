@@ -18,14 +18,16 @@
   <body>
     <%- include('partials/_header') %>
     <main style="margin: 1em;">
+      <h3>Login</h3>
       <div class="form-group mb-2">
         <form method="POST" action="/login">
+          <h6>Email address</h6>
           <input class="form-inline" type="email" name="email" placeholder="Enter email" style ="margin-bottom: .5em;" required/>
+          <h6>Password</h6>
           <input class="form-inline" type="password" name="password" placeholder="Enter password" style="margin-bottom: .5em;" required/>
           <button type="submit" style=
-          "background-color: white; 
-          color: black;
-          border-color: black; 
+          "background-color: blue; 
+          color: white; 
           border-radius: 3px; 
           padding: 5px 10px; 
           cursor: pointer;

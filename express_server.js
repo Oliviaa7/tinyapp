@@ -8,6 +8,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.json());
 
+
+
+// GLOBAL VARIABLES
+
 // url database for saved urls
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
@@ -16,6 +20,9 @@ const urlDatabase = {
 
 // user database for saved users
 const users = {};
+
+
+// FUNCTIONS
 
 // Function for generating random strings of 6 characters
 const generateRandomString = function() {
@@ -39,6 +46,7 @@ const findUserByEmail = function(email) {
   }
   return null;
 };
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -166,22 +174,33 @@ app.post("/urls/:id", (req, res) => {
 
 // Route for login form
 app.post("/login", (req, res) => {
-  const { username } = req.body;
-  if(username){
-    res.cookie('username', username);
-    return res.redirect("/urls");
-  };
-  return res.status(400).send("Username error.");
+
+  const { email, password } = req.body;
+
+  const user = findUserByEmail(email);
+
+  if(user) {
+    if (user.password === password) {
+      res.cookie('user_id', user.id);
+      return res.redirect("/urls");
+    } else {
+      res.status(403).send("Password incorrect. Please enter valid password.");
+    }
+  }
+  return res.status(403).send("Email not found. Please enter valid email or navigate to register page.");
 });
 
 // Route for logout form
 app.post("/logout", (req, res) => {
+
+  // Clear the user_id cookie upon logging out
   res.clearCookie('user_id');
-  return res.redirect("/urls");
+  return res.redirect("/login");
 });
 
 // Route for register form
 app.post("/register", (req, res) => {
+
   // Generate number for new user and grab input info
   const userID = generateRandomString();
   const { email, password } = req.body;
@@ -193,7 +212,7 @@ app.post("/register", (req, res) => {
 
   // Check if email is already registered and return error if true. 
   if (findUserByEmail(email)) {
-    return res.status(400).send("Email already registered.")
+    return res.status(400).send("Email already registered, navigate to login page or try again with new email address.")
   };
 
   // Create new user object with input info and generated id

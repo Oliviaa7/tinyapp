@@ -17,50 +17,29 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
-        <div class="navbar-text">
+        <div class="navbar-nav ml-auto">
           <% if (user) { %>
-            <span>Hello, <%= user.email %>!</span>
+            <div class="navbar-nav">
+            <span class="navbar-text">Hello, <%= user.email %>!</span>
+            </div>
+          <% } %>
+          <% if (!user) { %>
+            <a class="nav-item nav-link" href="/login">Login</a>
+            <a class="nav-item nav-link"  href="/register">Register</a>
+          <% } else { %>
+            <form class="form-inline" method="POST" action="/logout">
+              <button type="submit" style=
+              "color: black; 
+              background-color: whitesmoke;
+              border-color: black; 
+              border-radius: 3px; 
+              padding: 5px 10px;
+              margin-left: 10px; 
+              cursor: pointer;
+              ">Logout</button>
+            </form>
           <% } %>
         </div>
-        <% if (!user) { %>
-          <form class="form-inline" method="GET" action="/register" style="padding-left: 15px;">
-            <button type="submit" style=
-            "background-color: white; 
-            color: black;
-            border-color: black; 
-            border-radius: 3px; 
-            padding: 5px 10px; 
-            cursor: pointer;
-            ">
-            Register
-            </button>
-          </form>
-          <form class="form-inline" method="GET" action="/login" style="padding-left: 5px;">
-            <button type="submit" style=
-            "background-color: white; 
-            color: black;
-            border-color: black; 
-            border-radius: 3px; 
-            padding: 5px 10px; 
-            cursor: pointer;
-            ">
-            Login
-            </button>
-          </form>
-        <% } else { %>
-          <form class="form-inline" method="POST" action="/logout" style="padding-left: 15px;">
-            <button type="submit" style=
-            "background-color: white; 
-            color: black;
-            border-color: black; 
-            border-radius: 3px; 
-            padding: 5px 10px; 
-            cursor: pointer;
-            ">
-            Logout
-            </button>
-          </form>
-        <% } %>
     </div>
   </nav>
 </header>
