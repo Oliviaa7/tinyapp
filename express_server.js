@@ -89,7 +89,12 @@ app.get("/urls/new", (req, res) => {
     user
   };
 
-  res.render("urls_new", templateVars);
+  // If not logged in, redirect to login page
+  if(!user) {
+    res.redirect("/login");
+  }
+
+  return res.render("urls_new", templateVars);
 });
 
 // Route to view one particular URL
@@ -126,7 +131,11 @@ app.get("/register", (req, res) => {
     user
   };
 
-  res.render("register", templateVars)
+  // Redirect user to /urls if already logged in
+  if(user) {
+    return res.redirect("/urls");
+  }
+  return res.render("register", templateVars)
 });
 
 // GET route for login page
@@ -139,7 +148,11 @@ app.get("/login", (req, res) => {
     user
   };
 
-  res.render("login", templateVars)
+  // Redirect user to /urls if already logged in
+  if (user) {
+    return res.redirect("/urls");
+  }
+  return res.render("login", templateVars)
 });
 
 
@@ -148,6 +161,19 @@ app.get("/login", (req, res) => {
 
 // Route for "new shortURL" form 
 app.post("/urls", (req, res) => {
+
+  // If not logged in as register user, send user "unauthorized" message
+  if(!req.cookies.user_id) {
+    return res.status(401).send(`
+      <html>
+        <head><title>Unauthorized</title></head>
+        <body>
+          <h3>You must be logged in to shorten URLs</h3>
+        </body>
+      </html>
+      `);
+  };
+
   // creates new shortURL using generateRandomString
   const id = generateRandomString();
   const longURL = req.body.longURL;
@@ -177,8 +203,10 @@ app.post("/login", (req, res) => {
 
   const { email, password } = req.body;
 
+  // Confirm user via entered email by checking stored users
   const user = findUserByEmail(email);
 
+  // If valid user, check that entered password matches records, redirect to /urls if correct
   if(user) {
     if (user.password === password) {
       res.cookie('user_id', user.id);
