@@ -17,6 +17,7 @@ const urlDatabase = {
 // user database for saved users
 const users = {};
 
+// Function for generating random strings of 6 characters
 const generateRandomString = function() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
@@ -25,6 +26,18 @@ const generateRandomString = function() {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+};
+
+// Function for looking up user by email
+const findUserByEmail = function(email) {
+  for (const userID in users) {
+    const user = users[userID];
+
+    if (user.email === email) {
+      return user;
+    }
+  }
+  return null;
 };
 
 app.listen(PORT, () => {
@@ -154,6 +167,11 @@ app.post("/register", (req, res) => {
   // If user did not enter email or password, send error message to user. 
   if (!email || !password) {
     return res.status(400).send("Enter email and password.");
+  };
+
+  // Check if email is already registered and return error if true. 
+  if (findUserByEmail(email)) {
+    return res.status(400).send("Email already registered.")
   };
 
   // Create new user object with input info and generated id
