@@ -44,6 +44,10 @@ app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
 
+
+
+// GET REQUESTS
+
 // Main page, to be reworked
 app.get("/", (req, res) => {
   res.send("<h1>Welcome to TinyApp!</h1>");
@@ -112,9 +116,27 @@ app.get("/register", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
     user
-  }
+  };
+
   res.render("register", templateVars)
-})
+});
+
+// GET route for login page
+app.get("/login", (req, res) => {
+  const userID = req.cookies.user_id;
+  const user = users[userID];
+
+  const templateVars = {
+    urls: urlDatabase,
+    user
+  };
+
+  res.render("login", templateVars)
+});
+
+
+
+//POST REQUESTS
 
 // Route for "new shortURL" form 
 app.post("/urls", (req, res) => {

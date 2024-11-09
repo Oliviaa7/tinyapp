@@ -20,13 +20,22 @@
         <div class="navbar-text">
           <% if (user) { %>
             <span>Hello, <%= user.email %>!</span>
-          <% } else { %>
-            <span>Please log in</span>
           <% } %>
         </div>
         <% if (!user) { %>
-          <form class="form-inline" method="POST" action="/login" style="padding-left: 15px;">
-            <input class="form-control mr-sm-2" type="text" name="username" placeholder="Enter username" aria-label="Username">
+          <form class="form-inline" method="GET" action="/register" style="padding-left: 15px;">
+            <button type="submit" style=
+            "background-color: white; 
+            color: black;
+            border-color: black; 
+            border-radius: 3px; 
+            padding: 5px 10px; 
+            cursor: pointer;
+            ">
+            Register
+            </button>
+          </form>
+          <form class="form-inline" method="GET" action="/login" style="padding-left: 5px;">
             <button type="submit" style=
             "background-color: white; 
             color: black;
