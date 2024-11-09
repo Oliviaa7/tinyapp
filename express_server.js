@@ -59,7 +59,7 @@ app.get("/urls/:id", (req, res) => {
   if (!urlDatabase[req.params.id]) {
     return res.status(404).send("URL Not Found.");
   }
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id]};
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"]};
   res.render("urls_show", templateVars);
 });
 
@@ -73,6 +73,15 @@ app.get("/u/:id", (req, res) => {
     res.status(404).send("URL Not Found.");
   }
 });
+
+// GET route for register page
+app.get("/register", (req, res) => {
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"]
+  }
+  res.render("register", templateVars)
+})
 
 // Route for "new shortURL" form 
 app.post("/urls", (req, res) => {
