@@ -8,10 +8,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.json());
 
+// url database for saved urls
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
 };
+
+// user database for saved users
+const users = {};
 
 const generateRandomString = function() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -38,28 +42,41 @@ app.get("/urls.json", (req, res) => {
 
 // Current main page of app, displays list of URLs and shortURLs
 app.get("/urls", (req, res) => {
+  const userID = req.cookies.user_id;
+  const user = users[userID];
+
   const templateVars = { 
     urls: urlDatabase,
-    username: req.cookies["username"],
+    user,
    };
+
   res.render("urls_index", templateVars)
 });
 
-// Route to add a new shortURL
+// Route to view "New short id" page
 app.get("/urls/new", (req, res) => {
+
+  const userID = req.cookies.user_id;
+  const user = users[userID];
+
   const templateVars = { 
     urls: urlDatabase,
-    username: req.cookies["username"],
+    user
   };
+
   res.render("urls_new", templateVars);
 });
 
 // Route to view one particular URL
 app.get("/urls/:id", (req, res) => {
+
+  const userID = req.cookies.user_id;
+  const user = users[userID];
+
   if (!urlDatabase[req.params.id]) {
     return res.status(404).send("URL Not Found.");
   }
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], username: req.cookies["username"]};
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user};
   res.render("urls_show", templateVars);
 });
 
@@ -76,17 +93,23 @@ app.get("/u/:id", (req, res) => {
 
 // GET route for register page
 app.get("/register", (req, res) => {
+  const userID = req.cookies.user_id;
+  const user = users[userID];
+
   const templateVars = {
     urls: urlDatabase,
-    username: req.cookies["username"]
+    user
   }
   res.render("register", templateVars)
 })
 
 // Route for "new shortURL" form 
 app.post("/urls", (req, res) => {
+  // creates new shortURL using generateRandomString
   const id = generateRandomString();
   const longURL = req.body.longURL;
+
+  // assigns new ID to longURL
   urlDatabase[id] = longURL;
   res.redirect(`/urls/${id}`); 
 });
@@ -103,7 +126,7 @@ app.post("/urls/:id", (req, res) => {
   }
 
   urlDatabase[req.params.id] = req.body.longURL;
-  res.redirect("/urls");
+  return res.redirect("/urls");
 });
 
 // Route for login form
@@ -118,6 +141,34 @@ app.post("/login", (req, res) => {
 
 // Route for logout form
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   return res.redirect("/urls");
-})
+});
+
+// Route for register form
+app.post("/register", (req, res) => {
+  // Generate number for new user and grab input info
+  const userID = generateRandomString();
+  const { email, password } = req.body;
+
+  // If user did not enter email or password, send error message to user. 
+  if (!email || !password) {
+    return res.status(400).send("Enter email and password.");
+  };
+
+  // Create new user object with input info and generated id
+  const newUser = {
+    id: userID,
+    email,
+    password
+  };
+
+  // Add new user with ID to global users object
+  users[userID] = newUser;
+  
+  // Set cookie with user id
+  res.cookie('user_id', userID);
+
+  // Redirect to /urls page once complete
+  return res.redirect("/urls");
+});
