@@ -13,7 +13,7 @@ const testUsers = {
   }
 };
 
-describe('getUserByEmail', () => {
+describe('findUserByEmail', () => {
   it('should return a user when passed a valid email', () => {
     const user = findUserByEmail("user@example.com", testUsers)
     const expectedUserID = "userRandomID";

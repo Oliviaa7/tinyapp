@@ -1,7 +1,7 @@
 const express = require("express");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
-const { findUserByEmail } = require("./helpers");
+const { findUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -14,50 +14,13 @@ app.use(cookieSession({
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-
-
 // GLOBAL VARIABLES
 
 // url database for saved urls
-const urlDatabase = {
-  b2xVn2: {
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "ex1mpl"
-  },
-  "9sm5xK": {
-    longURL: "http://www.google.com",
-    userID: "ex2mpl"
-  },
-};
+const urlDatabase = {};
 
 // user database for saved users
 const users = {};
-
-
-// FUNCTIONS
-
-// Function for generating random strings of 6 characters
-const generateRandomString = function() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  const length = 6;
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-};
-
-const urlsForUser = function(id) {
-  const userUrls = {};
-
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      userUrls[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userUrls;
-};
-
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -91,7 +54,7 @@ app.get("/urls", (req, res) => {
 
     // Check for user-specific urls created to send to HTML file
   const templateVars = { 
-    urls: urlsForUser(userID),
+    urls: urlsForUser(userID, urlDatabase),
     user,
    };
 
