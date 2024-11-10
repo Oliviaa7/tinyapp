@@ -2,13 +2,15 @@ const express = require("express");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const { findUserByEmail, generateRandomString, urlsForUser } = require("./helpers");
+const methodOverride = require("method-override");
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
+app.use(methodOverride('_method'))
 app.use(cookieSession({
   name: 'session',
-  keys: ['a-very-strong-key-1'],
+  keys: ['a-very-strong-key-1', 'an-even-stronger-key-2'],
   maxAge: 24 * 60 * 60 * 1000
 }));
 app.use(express.urlencoded({ extended: true }));
@@ -16,10 +18,10 @@ app.use(express.json());
 
 // GLOBAL VARIABLES
 
-// url database for saved urls
+// URL database for saved URLs
 const urlDatabase = {};
 
-// user database for saved users
+// User database for saved users
 const users = {};
 
 app.listen(PORT, () => {
@@ -27,10 +29,9 @@ app.listen(PORT, () => {
 });
 
 
-
 // GET REQUESTS
 
-// Main page, redirect to "/urls"
+// GET route for main page, redirect to "/register"
 app.get("/", (req, res) => {
   return res.redirect("/register");
 });
@@ -39,7 +40,7 @@ app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-// Current main page of app, displays list of URLs and shortURLs
+// GET route for URLs page
 app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
   const user = users[userID];
@@ -61,7 +62,7 @@ app.get("/urls", (req, res) => {
   return res.render("urls_index", templateVars)
 });
 
-// Route to view "New short id" page
+// GET route to view ADD NEW page
 app.get("/urls/new", (req, res) => {
 
   const userID = req.session.user_id;
@@ -80,7 +81,8 @@ app.get("/urls/new", (req, res) => {
   return res.render("urls_new", templateVars);
 });
 
-// Route to view one particular URL
+
+// GET route to view one particular URL
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   const user_ID = req.session.user_id;
@@ -118,7 +120,8 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-// 
+
+// GET route for specific shortURL
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
 
@@ -141,6 +144,7 @@ app.get("/u/:id", (req, res) => {
   }
 });
 
+
 // GET route for register page
 app.get("/register", (req, res) => {
   const userID = req.session.user_id;
@@ -157,6 +161,7 @@ app.get("/register", (req, res) => {
   }
   return res.render("register", templateVars)
 });
+
 
 // GET route for login page
 app.get("/login", (req, res) => {
@@ -199,106 +204,6 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${id}`); 
 });
 
-// Route for DELETE form
-app.post("/urls/:id/delete", (req, res) => {
-  const id = req.params.id;
-  const user_ID = req.session.user_id;
-  const user = users[user_ID];
-  const urlEntry = urlDatabase[id];
-
-  if(!urlEntry) {
-    return res.status(404).render("error-page", {
-      errorCode: "404 Not Found",
-      message: "URL Not Found."
-    });
-  }
-
-  // If not logged in, send error message.
-  if(!user) {
-    return res.status(401).render("error-page", {
-      errorCode: "401 Unauthorized",
-      message: "You must be logged in to delete URLs."
-    });
-  };
-
-  if (urlEntry.userID !== user_ID) {
-    return res.status(403).render("error-page", {
-      errorCode: "403 Forbidden",
-      message: "You do not have permission to delete this record."
-    })
-  }
-  
-  delete urlDatabase[id];
-  return res.redirect("/urls");
-});
-
-// Route for EDIT form
-app.post("/urls/:id", (req, res) => {
-  const id = req.params.id;
-  const user_ID = req.session.user_id;
-  const user = users[user_ID];
-  const urlEntry = urlDatabase[id];
-
-  // If not logged in, send error message.
-  if(!req.session.user_id) {
-    return res.status(401).render("error-page", {
-      errorCode: "401 Unauthorized",
-      message: "You must be logged in to edit URLs."
-    });
-  }
-
-  // If URL does not exist.
-  if (!urlDatabase[req.params.id].longURL) {
-    return res.status(404).render("error-page", {
-      errorCode: "404 Not Found",
-      message: "URL Not Found."
-    });
-  }
-
-  if (urlEntry.userID !== user_ID) {
-    return res.status(403).render("error-page", {
-      errorCode: "403 Forbidden",
-      message: "You do not have permission to edit this record."
-    })
-  }
-
-  urlDatabase[req.params.id].longURL = req.body.longURL;
-  return res.redirect("/urls");
-});
-
-// Route for LOGIN form
-app.post("/login", (req, res) => {
-
-  const { email, password } = req.body;
-
-  // Confirm user via entered email by checking stored users
-  const user = findUserByEmail(email, users);
-
-  // If valid user, check that entered password matches records, redirect to /urls if correct
-  if(user) {
-    if (bcrypt.compareSync(password, user.hashedPassword)) {
-      req.session.user_id = user.id;
-      return res.redirect("/urls");
-    } else {
-      res.status(403).render("error-page", {
-        errorCode: "403 Forbidden",
-        message: "Password incorrect. Please enter valid password."
-      });
-    }
-  }
-  return res.status(403).render("error-page", {
-    errorCode: "403 Forbidden",
-    message: "Email not found. Please enter valid email or navigate to register page."
-  });
-});
-
-// Route for LOGOUT form
-app.post("/logout", (req, res) => {
-
-  // Clear the user_id cookie upon logging out
-  req.session = null;
-  return res.redirect("/login");
-});
 
 // Route for REGISTER form
 app.post("/register", (req, res) => {
@@ -338,5 +243,110 @@ app.post("/register", (req, res) => {
   req.session.user_id = userID;
 
   // Redirect to /urls page once complete
+  return res.redirect("/urls");
+});
+
+
+// Route for LOGIN form
+app.post("/login", (req, res) => {
+
+  const { email, password } = req.body;
+
+  // Confirm user via entered email by checking stored users
+  const user = findUserByEmail(email, users);
+
+  // If valid user, check that entered password matches records, redirect to /urls if correct
+  if(user) {
+    if (bcrypt.compareSync(password, user.hashedPassword)) {
+      req.session.user_id = user.id;
+      return res.redirect("/urls");
+    } else {
+      res.status(403).render("error-page", {
+        errorCode: "403 Forbidden",
+        message: "Password incorrect. Please enter valid password."
+      });
+    }
+  }
+  return res.status(403).render("error-page", {
+    errorCode: "403 Forbidden",
+    message: "Email not found. Please enter valid email or navigate to register page."
+  });
+});
+
+
+// Route for LOGOUT form
+app.post("/logout", (req, res) => {
+
+  // Clear the user_id cookie upon logging out
+  req.session = null;
+  return res.redirect("/login");
+});
+
+
+// Route for EDIT form
+app.put("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  const user_ID = req.session.user_id;
+  const user = users[user_ID];
+  const urlEntry = urlDatabase[id];
+
+  // If not logged in, send error message.
+  if(!req.session.user_id) {
+    return res.status(401).render("error-page", {
+      errorCode: "401 Unauthorized",
+      message: "You must be logged in to edit URLs."
+    });
+  }
+
+  // If URL does not exist.
+  if (!urlDatabase[req.params.id].longURL) {
+    return res.status(404).render("error-page", {
+      errorCode: "404 Not Found",
+      message: "URL Not Found."
+    });
+  }
+
+  if (urlEntry.userID !== user_ID) {
+    return res.status(403).render("error-page", {
+      errorCode: "403 Forbidden",
+      message: "You do not have permission to edit this record."
+    })
+  }
+
+  urlDatabase[req.params.id].longURL = req.body.longURL;
+  return res.redirect("/urls");
+});
+
+
+// Route for DELETE form
+app.delete("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  const user_ID = req.session.user_id;
+  const user = users[user_ID];
+  const urlEntry = urlDatabase[id];
+
+  if(!urlEntry) {
+    return res.status(404).render("error-page", {
+      errorCode: "404 Not Found",
+      message: "URL Not Found."
+    });
+  }
+
+  // If not logged in, send error message.
+  if(!user) {
+    return res.status(401).render("error-page", {
+      errorCode: "401 Unauthorized",
+      message: "You must be logged in to delete URLs."
+    });
+  };
+
+  if (urlEntry.userID !== user_ID) {
+    return res.status(403).render("error-page", {
+      errorCode: "403 Forbidden",
+      message: "You do not have permission to delete this record."
+    })
+  }
+  
+  delete urlDatabase[id];
   return res.redirect("/urls");
 });
