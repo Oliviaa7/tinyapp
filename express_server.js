@@ -1,6 +1,7 @@
 const express = require("express");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
+const { findUserByEmail } = require("./helpers");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -44,18 +45,6 @@ const generateRandomString = function() {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
-};
-
-// Function for looking up user by email
-const findUserByEmail = function(email) {
-  for (const userID in users) {
-    const user = users[userID];
-
-    if (user.email === email) {
-      return user;
-    }
-  }
-  return null;
 };
 
 const urlsForUser = function(id) {
@@ -243,7 +232,7 @@ app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
 
   // Enters new url object into database with newly generated id, long URL from req and userID from cookie
-  urlDatabase[id] = { longURL, userID: req.cookies.user_id };
+  urlDatabase[id] = { longURL, userID: req.session.user_id };
   res.redirect(`/urls/${id}`); 
 });
 
@@ -320,7 +309,7 @@ app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
   // Confirm user via entered email by checking stored users
-  const user = findUserByEmail(email);
+  const user = findUserByEmail(email, users);
 
   // If valid user, check that entered password matches records, redirect to /urls if correct
   if(user) {
@@ -365,7 +354,7 @@ app.post("/register", (req, res) => {
   };
 
   // Check if email is already registered and return error if true. 
-  if (findUserByEmail(email)) {
+  if (findUserByEmail(email, users)) {
     return res.status(400).render("error-page", {
       errorCode: "400 Bad Request",
       message: "Email already registered, navigate to login page or try again with new email address."
