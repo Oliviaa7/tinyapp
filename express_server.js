@@ -1,12 +1,16 @@
 const express = require("express");
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.set("view engine", "ejs");
+app.use(cookieSession({
+  name: 'session',
+  keys: ['a-very-strong-key-1'],
+  maxAge: 24 * 60 * 60 * 1000
+}));
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 app.use(express.json());
 
 
@@ -85,7 +89,7 @@ app.get("/urls.json", (req, res) => {
 
 // Current main page of app, displays list of URLs and shortURLs
 app.get("/urls", (req, res) => {
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   const user = users[userID];
 
     // Check if user is logged in. If not, message displayed to redirect to login or register pages
@@ -108,7 +112,7 @@ app.get("/urls", (req, res) => {
 // Route to view "New short id" page
 app.get("/urls/new", (req, res) => {
 
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   const user = users[userID];
 
   const templateVars = { 
@@ -127,7 +131,7 @@ app.get("/urls/new", (req, res) => {
 // Route to view one particular URL
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
-  const user_ID = req.cookies.user_id;
+  const user_ID = req.session.user_id;
   const user = users[user_ID];
   const urlEntry = urlDatabase[id];
 
@@ -187,7 +191,7 @@ app.get("/u/:id", (req, res) => {
 
 // GET route for register page
 app.get("/register", (req, res) => {
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   const user = users[userID];
 
   const templateVars = {
@@ -204,7 +208,7 @@ app.get("/register", (req, res) => {
 
 // GET route for login page
 app.get("/login", (req, res) => {
-  const userID = req.cookies.user_id;
+  const userID = req.session.user_id;
   const user = users[userID];
 
   const templateVars = {
@@ -227,7 +231,7 @@ app.get("/login", (req, res) => {
 app.post("/urls", (req, res) => {
 
   // If not logged in as register user, send user "unauthorized" message
-  if(!req.cookies.user_id) {
+  if(!req.session.user_id) {
     return res.status(401).render("error-page", {
       errorCode: "401 Unauthorized",
       message: "You must be logged in to shorten URLs."
@@ -246,7 +250,7 @@ app.post("/urls", (req, res) => {
 // Route for DELETE form
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
-  const user_ID = req.cookies.user_id;
+  const user_ID = req.session.user_id;
   const user = users[user_ID];
   const urlEntry = urlDatabase[id];
 
@@ -279,12 +283,12 @@ app.post("/urls/:id/delete", (req, res) => {
 // Route for EDIT form
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
-  const user_ID = req.cookies.user_id;
+  const user_ID = req.session.user_id;
   const user = users[user_ID];
   const urlEntry = urlDatabase[id];
 
   // If not logged in, send error message.
-  if(!req.cookies.user_id) {
+  if(!req.session.user_id) {
     return res.status(401).render("error-page", {
       errorCode: "401 Unauthorized",
       message: "You must be logged in to edit URLs."
@@ -321,7 +325,7 @@ app.post("/login", (req, res) => {
   // If valid user, check that entered password matches records, redirect to /urls if correct
   if(user) {
     if (bcrypt.compareSync(password, user.hashedPassword)) {
-      res.cookie('user_id', user.id);
+      req.session.user_id = user.id;
       return res.redirect("/urls");
     } else {
       res.status(403).render("error-page", {
@@ -340,7 +344,7 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
 
   // Clear the user_id cookie upon logging out
-  res.clearCookie('user_id');
+  req.session = null;
   return res.redirect("/login");
 });
 
@@ -379,7 +383,7 @@ app.post("/register", (req, res) => {
   users[userID] = newUser;
   
   // Set cookie with user id
-  res.cookie('user_id', userID);
+  req.session.user_id = userID;
 
   // Redirect to /urls page once complete
   return res.redirect("/urls");
