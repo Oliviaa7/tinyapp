@@ -270,36 +270,46 @@ app.post("/urls/:id/delete", (req, res) => {
       message: "You do not have permission to delete this record."
     })
   }
-
-  delete urlEntry;
+  
+  delete urlDatabase[id];
   return res.redirect("/urls");
 });
 
-// Route for edit form
+// Route for EDIT form
 app.post("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  const user_ID = req.cookies.user_id;
+  const user = users[user_ID];
+  const urlEntry = urlDatabase[id];
 
   // If not logged in, send error message.
   if(!req.cookies.user_id) {
-    return res.status(401).send(`
-      <html>
-        <head><title>Unauthorized</title></head>
-        <body>
-          <h3>You must be logged in to edit URLs</h3>
-        </body>
-      </html>
-      `);
-  };
-
-  if (!urlDatabase[req.params.id].longURL) {
-    return res.status(404).send("URL Not Found.");
+    return res.status(401).render("error-page", {
+      errorCode: "401 Unauthorized",
+      message: "You must be logged in to edit URLs."
+    });
   }
 
+  // If URL does not exist.
+  if (!urlDatabase[req.params.id].longURL) {
+    return res.status(404).render("error-page", {
+      errorCode: "404 Not Found",
+      message: "URL Not Found."
+    });
+  }
+
+  if (urlEntry.userID !== user_ID) {
+    return res.status(403).render("error-page", {
+      errorCode: "403 Forbidden",
+      message: "You do not have permission to edit this record."
+    })
+  }
 
   urlDatabase[req.params.id].longURL = req.body.longURL;
   return res.redirect("/urls");
 });
 
-// Route for login form
+// Route for LOGIN form
 app.post("/login", (req, res) => {
 
   const { email, password } = req.body;
@@ -313,13 +323,19 @@ app.post("/login", (req, res) => {
       res.cookie('user_id', user.id);
       return res.redirect("/urls");
     } else {
-      res.status(403).send("Password incorrect. Please enter valid password.");
+      res.status(403).render("error-page", {
+        errorCode: "403 Forbidden",
+        message: "Password incorrect. Please enter valid password."
+      });
     }
   }
-  return res.status(403).send("Email not found. Please enter valid email or navigate to register page.");
+  return res.status(403).render("error-page", {
+    errorCode: "403 Forbidden",
+    message: "Email not found. Please enter valid email or navigate to register page."
+  });
 });
 
-// Route for logout form
+// Route for LOGOUT form
 app.post("/logout", (req, res) => {
 
   // Clear the user_id cookie upon logging out
@@ -327,7 +343,7 @@ app.post("/logout", (req, res) => {
   return res.redirect("/login");
 });
 
-// Route for register form
+// Route for REGISTER form
 app.post("/register", (req, res) => {
 
   // Generate number for new user and grab input info
@@ -336,12 +352,18 @@ app.post("/register", (req, res) => {
 
   // If user did not enter email or password, send error message to user. 
   if (!email || !password) {
-    return res.status(400).send("Enter email and password.");
+    return res.status(400).render("error-page", {
+      errorCode: "400 Bad Request",
+      message: "Enter email and password."
+    });
   };
 
   // Check if email is already registered and return error if true. 
   if (findUserByEmail(email)) {
-    return res.status(400).send("Email already registered, navigate to login page or try again with new email address.")
+    return res.status(400).render("error-page", {
+      errorCode: "400 Bad Request",
+      message: "Email already registered, navigate to login page or try again with new email address."
+    });
   };
 
   // Create new user object with input info and generated id
