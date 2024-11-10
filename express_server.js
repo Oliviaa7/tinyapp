@@ -14,8 +14,14 @@ app.use(express.json());
 
 // url database for saved urls
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b2xVn2: {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "ex1mpl"
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "ex2mpl"
+  },
 };
 
 // user database for saved users
@@ -47,6 +53,17 @@ const findUserByEmail = function(email) {
   return null;
 };
 
+const urlsForUser = function(id) {
+  const userUrls = {};
+
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      userUrls[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userUrls;
+};
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -56,9 +73,9 @@ app.listen(PORT, () => {
 
 // GET REQUESTS
 
-// Main page, to be reworked
+// Main page, redirect to "/urls"
 app.get("/", (req, res) => {
-  res.send("<h1>Welcome to TinyApp!</h1>");
+  return res.redirect("/register");
 });
 
 app.get("/urls.json", (req, res) => {
@@ -70,12 +87,21 @@ app.get("/urls", (req, res) => {
   const userID = req.cookies.user_id;
   const user = users[userID];
 
+    // Check if user is logged in. If not, message displayed to redirect to login or register pages
+   if(!user) {
+    return res.status(401).render("error-page", {
+      errorCode: "401 Unauthorized",
+      message: "You need to be logged in to view shortened URLs"
+    });
+  }
+
+    // Check for user-specific urls created to send to HTML file
   const templateVars = { 
-    urls: urlDatabase,
+    urls: urlsForUser(userID),
     user,
    };
 
-  res.render("urls_index", templateVars)
+  return res.render("urls_index", templateVars)
 });
 
 // Route to view "New short id" page
@@ -91,7 +117,7 @@ app.get("/urls/new", (req, res) => {
 
   // If not logged in, redirect to login page
   if(!user) {
-    res.redirect("/login");
+    return res.redirect("/login");
   }
 
   return res.render("urls_new", templateVars);
@@ -99,25 +125,62 @@ app.get("/urls/new", (req, res) => {
 
 // Route to view one particular URL
 app.get("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  const user_ID = req.cookies.user_id;
+  const user = users[user_ID];
+  const urlEntry = urlDatabase[id];
 
-  const userID = req.cookies.user_id;
-  const user = users[userID];
+  // If user is not logged in, provide message with redirect links
+  if(!user) {
+    return res.status(401).render("error-page", {
+      errorCode: "401 Unauthorized",
+      message: "You need to be logged in to view individual URLs."
+      
+    })
+  }
 
-  if (!urlDatabase[req.params.id]) {
+  // If shortURL does not exist, send error
+  if (!urlEntry.longURL) {
     return res.status(404).send("URL Not Found.");
   }
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user};
+
+  // If shortURL does not belong to user, send error
+  if (urlEntry.userID !== user_ID) {
+    return res.status(403).render("error-page", {
+      errorCode: "403 Forbidden",
+      message: "You do not have permission to view this URL."
+    });
+  }
+
+  const templateVars = { 
+    id, 
+    longURL: urlEntry.longURL, 
+    user
+  };
+
   res.render("urls_show", templateVars);
 });
 
 // 
 app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  const id = req.params.id;
+
+  if(!urlDatabase[id]) {
+    return res.status(404).render("error-page", {
+      errorCode: "404 Not Found",
+      message: "URL Not Found."
+    });
+  }
+
+  const longURL = urlDatabase[id].longURL;
 
   if (longURL) {
     res.redirect(longURL);
   } else {
-    res.status(404).send("URL Not Found.");
+    return res.status(404).send("error-page", {
+      errorCode: "404 Not Found",
+      message: "URL Not Found."
+    });
   }
 });
 
@@ -159,42 +222,80 @@ app.get("/login", (req, res) => {
 
 //POST REQUESTS
 
-// Route for "new shortURL" form 
+// Route for NEW SHORTURL form 
 app.post("/urls", (req, res) => {
 
   // If not logged in as register user, send user "unauthorized" message
   if(!req.cookies.user_id) {
-    return res.status(401).send(`
-      <html>
-        <head><title>Unauthorized</title></head>
-        <body>
-          <h3>You must be logged in to shorten URLs</h3>
-        </body>
-      </html>
-      `);
+    return res.status(401).render("error-page", {
+      errorCode: "401 Unauthorized",
+      message: "You must be logged in to shorten URLs."
+    });
   };
 
   // creates new shortURL using generateRandomString
   const id = generateRandomString();
   const longURL = req.body.longURL;
 
-  // assigns new ID to longURL
-  urlDatabase[id] = longURL;
+  // Enters new url object into database with newly generated id, long URL from req and userID from cookie
+  urlDatabase[id] = { longURL, userID: req.cookies.user_id };
   res.redirect(`/urls/${id}`); 
 });
 
-// Route for delete form
+// Route for DELETE form
 app.post("/urls/:id/delete", (req, res) => {
-  delete urlDatabase[req.params.id];
-  res.redirect("/urls");
+  const id = req.params.id;
+  const user_ID = req.cookies.user_id;
+  const user = users[user_ID];
+  const urlEntry = urlDatabase[id];
+
+  if(!urlEntry) {
+    return res.status(404).render("error-page", {
+      errorCode: "404 Not Found",
+      message: "URL Not Found."
+    });
+  }
+
+  // If not logged in, send error message.
+  if(!user) {
+    return res.status(401).render("error-page", {
+      errorCode: "401 Unauthorized",
+      message: "You must be logged in to delete URLs."
+    });
+  };
+
+  if (urlEntry.userID !== user_ID) {
+    return res.status(403).render("error-page", {
+      errorCode: "403 Forbidden",
+      message: "You do not have permission to delete this record."
+    })
+  }
+
+  delete urlEntry;
+  return res.redirect("/urls");
 });
 
+// Route for edit form
 app.post("/urls/:id", (req, res) => {
-  if (!urlDatabase[req.params.id]) {
+
+  // If not logged in, send error message.
+  if(!req.cookies.user_id) {
+    return res.status(401).send(`
+      <html>
+        <head><title>Unauthorized</title></head>
+        <body>
+          <h3>You must be logged in to edit URLs</h3>
+        </body>
+      </html>
+      `);
+  };
+
+  if (!urlDatabase[req.params.id].longURL) {
     return res.status(404).send("URL Not Found.");
   }
 
-  urlDatabase[req.params.id] = req.body.longURL;
+
+  urlDatabase[req.params.id].longURL = req.body.longURL;
   return res.redirect("/urls");
 });
 
