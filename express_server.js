@@ -314,14 +314,13 @@ app.post("/urls/:id", (req, res) => {
 app.post("/login", (req, res) => {
 
   const { email, password } = req.body;
-  const hashedPassword = bcrypt.hashSync(password, 10);
 
   // Confirm user via entered email by checking stored users
   const user = findUserByEmail(email);
 
   // If valid user, check that entered password matches records, redirect to /urls if correct
   if(user) {
-    if (bcrypt.compareSync(password, hashedPassword)) {
+    if (bcrypt.compareSync(password, user.hashedPassword)) {
       res.cookie('user_id', user.id);
       return res.redirect("/urls");
     } else {
